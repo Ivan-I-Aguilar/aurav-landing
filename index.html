@@ -160,7 +160,8 @@ td.n{font-variant-numeric:tabular-nums;font-weight:600}
 .video .play{position:absolute;left:50%;top:50%;width:88px;height:88px;margin:-44px 0 0 -44px;border-radius:50%;background:var(--sky);color:var(--bg);display:grid;place-items:center;padding-left:6px;transition:transform .25s}
 .video:hover .play{transform:scale(1.08)}
 .video-pie{position:absolute;left:22px;bottom:18px;font-size:14px;color:var(--muted)}
-.video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+.video video{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;background:#020b18}
+.video .play{border:0;cursor:pointer;z-index:1}.video .play[hidden],.video-pie[hidden]{display:none}.video-pie{z-index:1}
 /* dónde */
 .donde{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border-radius:16px;overflow:hidden;max-width:760px}
 .donde div{background:var(--bg);padding:26px 22px;display:flex;flex-direction:column;gap:8px}
@@ -307,11 +308,11 @@ footer .logo{height:18px}
     <h2 id="h-video" class="rv">Miralo en un minuto</h2>
     <p class="lead rv">Un alumno, un visor y un avión. De la caja a la plataforma.</p>
   </div>
-  <a class="video rv" id="video-caja" href="#video" aria-label="Ver el video de AURAV">
-    <img src="img/juego-vuelta.jpg" alt="" width="800" height="450" loading="lazy">
-    <span class="play" aria-hidden="true"><svg width="26" height="30" viewBox="0 0 22 26"><path d="M0 0l22 13L0 26z" fill="currentColor"/></svg></span>
-    <span class="video-pie" id="video-pie">Video en preparación</span>
-  </a>
+  <div class="video rv" id="video-caja">
+    <video id="video-el" src="video/aurav.mp4" poster="video/aurav-poster.jpg" preload="none" playsinline></video>
+    <button type="button" class="play" id="video-play" aria-label="Reproducir el video de AURAV"><svg width="26" height="30" viewBox="0 0 22 26" aria-hidden="true"><path d="M0 0l22 13L0 26z" fill="currentColor"/></svg></button>
+    <span class="video-pie" id="video-pie">1 minuto</span>
+  </div>
 </section>
 
 <div class="escenario">
@@ -660,18 +661,11 @@ const root = document.documentElement;
   if (!reduce) requestAnimationFrame(vivo); else pintar();
 })();
 
-/* video: pegá acá el enlace de YouTube cuando esté listo (no listado) */
+/* video: archivo propio, se reproduce acá mismo */
 (() => {
-  const VIDEO_URL = '';
-  const caja = document.getElementById('video-caja'), pie = document.getElementById('video-pie');
-  const id = (VIDEO_URL.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/) || [])[1];
-  if (!id) { caja.addEventListener('click', e => e.preventDefault()); caja.style.cursor = 'default'; return; }
-  pie.textContent = 'Ver el video';
-  caja.href = 'https://www.youtube.com/watch?v=' + id; caja.target = '_blank'; caja.rel = 'noopener';
-  if (/github\.io$/.test(location.hostname)) caja.addEventListener('click', e => {
-    e.preventDefault();
-    caja.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0" title="Video de AURAV" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
-  }, { once: true });
+  const v = document.getElementById('video-el'), bt = document.getElementById('video-play'), pie = document.getElementById('video-pie');
+  bt.addEventListener('click', () => { v.controls = true; bt.hidden = true; pie.hidden = true; v.play(); });
+  v.addEventListener('ended', () => { v.controls = false; v.load(); bt.hidden = false; pie.hidden = false; });
 })();
 
 /* entradas */
