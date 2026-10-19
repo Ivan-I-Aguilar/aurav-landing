@@ -51,7 +51,19 @@ img{display:block;max-width:100%}
 .estado-visor{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:10px}
 .estado-visor i{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--sky-dim);transition:background-color .3s,box-shadow .3s}
 .on .estado-visor i{background:var(--sky);box-shadow:0 0 10px var(--sky)}
-.medidor{position:fixed;left:0;top:0;height:2px;width:100%;transform-origin:left;transform:scaleX(var(--p));background:var(--sky);z-index:31}
+.medidor{display:none}
+/* guía: un láser celeste que recorre la página y muestra por dónde vas */
+.guia{position:fixed;left:max(10px,1.3vw);top:96px;bottom:26px;width:2px;z-index:29;pointer-events:none}
+.guia::before{content:"";position:absolute;inset:0;border-radius:2px;background:linear-gradient(rgba(7,173,253,.22),rgba(7,173,253,.08))}
+.guia .hecho{position:absolute;left:0;top:0;width:2px;height:calc(var(--p) * 100%);border-radius:2px;background:linear-gradient(rgba(7,173,253,.25),var(--sky));box-shadow:0 0 8px rgba(7,173,253,.6)}
+.guia .punta{position:absolute;left:50%;top:calc(var(--p) * 100%);width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:#e6f6ff;box-shadow:0 0 0 3px rgba(7,173,253,.35),0 0 18px 4px rgba(7,173,253,.75)}
+.guia .rayo{position:absolute;left:0;top:calc(var(--p) * 100%);width:2px;height:calc((1 - var(--p)) * 100%);overflow:hidden}
+.guia .rayo::after{content:"";position:absolute;left:0;top:-90px;width:2px;height:90px;background:linear-gradient(transparent,rgba(7,173,253,.95),transparent);animation:rayo 2.4s cubic-bezier(.4,0,.2,1) infinite}
+@keyframes rayo{0%{transform:translateY(0);opacity:0}15%{opacity:1}100%{transform:translateY(100vh);opacity:.2}}
+.guia .marca{position:absolute;left:-3px;width:8px;height:1px;background:rgba(7,173,253,.55)}
+.guia .marca.ok{background:var(--sky);box-shadow:0 0 6px rgba(7,173,253,.8)}
+@media (prefers-reduced-motion:reduce){.guia .rayo::after{animation:none;opacity:0}}
+@media print{.guia{display:none}}
 .btn{display:inline-flex;align-items:center;gap:10px;font:600 15px/1 var(--sans);text-decoration:none;color:var(--bg);background:var(--sky);padding:15px 22px;border-radius:999px;border:0;cursor:pointer;transition:transform .2s,background-color .2s}
 .btn:hover{transform:translateY(-2px);background:#3cc0ff}
 .btn:active{transform:none}
@@ -276,6 +288,7 @@ footer .logo{height:18px}
 
 
 <div class="medidor" aria-hidden="true"></div>
+<div class="guia" id="guia" aria-hidden="true"><i class="hecho"></i><i class="rayo"></i><i class="punta"></i></div>
 <header class="barra">
   <div class="in">
     <a class="marca" href="#inicio" aria-label="AURAV"><img class="logo" src="img/logo-aurav.png" alt="AURAV" width="900" height="182"></a>
@@ -665,6 +678,12 @@ const root = document.documentElement;
   const vivo = t => { reloj = t / 1000; const r = sec.getBoundingClientRect(); if (r.top > -innerHeight * 1.5 && r.bottom > 0) pintar(); requestAnimationFrame(vivo); };
   tam(); addEventListener('resize', () => { tam(); pintar(); });
   addEventListener('scroll', () => requestAnimationFrame(pintar), { passive: true });
+  /* marcas de la guía: una por sección, se encienden al pasarlas */
+  { const g = document.getElementById('guia'), secs = [...document.querySelectorAll('#video, .cap, #aula, #demo')], ms = [];
+    const ubicar = () => { const max = document.documentElement.scrollHeight - innerHeight; ms.forEach((m, i) => { const f = Math.min(1, Math.max(0, (secs[i].getBoundingClientRect().top + scrollY - innerHeight * .35) / max)); m.style.top = (f * 100) + '%'; m.dataset.f = f; }); };
+    secs.forEach(() => { const m = document.createElement('i'); m.className = 'marca'; g.appendChild(m); ms.push(m); });
+    const encender = () => { const max = document.documentElement.scrollHeight - innerHeight, p = max > 0 ? scrollY / max : 0; ms.forEach(m => m.classList.toggle('ok', p >= +m.dataset.f - .002)); };
+    ubicar(); encender(); addEventListener('resize', () => { ubicar(); encender(); }); addEventListener('load', () => { ubicar(); encender(); }); addEventListener('scroll', encender, { passive: true }); }
   /* piloto automático: apenas el visor empieza a bajar, la entrada al mundo AURAV se reproduce sola */
   { let auto = null, hecho = false, ultimo = scrollY;
     const fin = () => sec.offsetTop + (sec.offsetHeight - innerHeight) * .84;
