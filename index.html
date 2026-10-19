@@ -233,6 +233,12 @@ footer .logo{height:18px}
 .dentro .tele{opacity:0}
 .portal-txt{z-index:3;position:absolute;left:max(24px,env(safe-area-inset-left,0px));right:24px;bottom:max(56px,env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:18px;max-width:640px;margin-left:clamp(0px,6vw,110px);opacity:0;transform:translateY(24px);transition:opacity .6s,transform .6s;pointer-events:none}
 .portal-txt.ver{opacity:1;transform:none;pointer-events:auto}
+.seguir{z-index:4;position:absolute;left:50%;bottom:max(14px,env(safe-area-inset-bottom,0px));transform:translate(-50%,12px);display:flex;flex-direction:column;align-items:center;gap:2px;color:#f9f8fa;text-decoration:none;font-size:13px;font-weight:600;letter-spacing:.06em;text-shadow:0 1px 12px rgba(3,21,43,.9);opacity:0;pointer-events:none;transition:opacity .6s .5s,transform .6s .5s;white-space:nowrap}
+.seguir.ver{opacity:1;transform:translate(-50%,0);pointer-events:auto}
+.seguir svg{color:var(--sky);animation:baja 1.4s ease-in-out infinite}
+@keyframes baja{0%,100%{transform:translateY(0);opacity:1}50%{transform:translateY(7px);opacity:.55}}
+@media (max-width:760px){.portal-txt{bottom:max(64px,env(safe-area-inset-bottom,0px))}}
+@media (prefers-reduced-motion:reduce){.seguir svg{animation:none}}
 .portal-txt h2{font-size:clamp(44px,6.4vw,110px);color:#f9f8fa;text-shadow:0 2px 30px rgba(3,21,43,.7)}
 .portal-txt p{color:#f9f8fa;font-size:18px;max-width:40ch;text-shadow:0 1px 16px rgba(3,21,43,.9)}
 .mira{position:absolute;top:50%;left:50%;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;box-shadow:inset 0 0 0 2px rgba(249,248,250,.85);opacity:0;transition:opacity .6s;pointer-events:none}
@@ -300,6 +306,7 @@ footer .logo{height:18px}
       <p>Esto es lo que ve con el visor puesto: el Cessna 172S en la plataforma y los doce puntos de la inspección prevuelo esperándolo. Arrastrá para mirar alrededor.</p>
       <div class="acciones"><a class="btn wa" href="#demo">Pedir una demo con el visor</a><a class="btn fino" href="https://ivan-i-aguilar.github.io/aurav-prevuelo/" target="_blank" rel="noopener">Probar el juego</a></div>
     </div>
+    <a class="seguir" id="seguir" href="#video"><span>Seguí bajando · el video en 1 minuto</span><svg width="22" height="22" viewBox="0 0 24 24" aria-hidden="true"><path d="M5 9l7 7 7-7" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"/></svg></a>
   </div>
 </section>
 
@@ -446,7 +453,7 @@ const root = document.documentElement;
 /* portada 3D: una cabeza se pone el visor y la cámara entra al juego */
 (() => {
   const sec = document.getElementById('inicio'), pin = document.getElementById('portal-pin'), cv = document.getElementById('pano'),
-        intro = document.getElementById('intro'), txt = document.getElementById('portal-txt'), estado = document.getElementById('estado'),
+        intro = document.getElementById('intro'), txt = document.getElementById('portal-txt'), seguir = document.getElementById('seguir'), estado = document.getElementById('estado'),
         flash = document.getElementById('destello'), velo = document.getElementById('velo'), tFase = document.getElementById('t-fase'), tVisor = document.getElementById('t-visor'); const tRango = document.getElementById('t-rango');
   if (!window.THREE) { pin.style.background = 'url(img/c172-360.jpg) 60% 48%/cover'; return; }
   const T = THREE;
@@ -643,7 +650,7 @@ const root = document.documentElement;
     tFase.textContent = enJuego ? '04 · En el juego' : entra > .02 ? '03 · Entrando' : luz > .02 ? '02 · Encendido' : baja > .02 ? '01 · Calibrando' : '00 · En espera';
     estado.textContent = enJuego ? 'Dentro del juego' : entra > .02 ? 'Entrando al visor' : luz > .5 ? 'Visor encendido' : baja > .02 ? `Calibrando visor ${pct} %` : 'Visor en espera';
     root.classList.toggle('on', luz > .5 || enJuego);
-    pin.classList.toggle('dentro', q > .76); txt.classList.toggle('ver', q > .8);
+    pin.classList.toggle('dentro', q > .76); txt.classList.toggle('ver', q > .8); seguir.classList.toggle('ver', q > .8);
 
     if (enJuego) {
       const k = tr(q, .69, 1);
