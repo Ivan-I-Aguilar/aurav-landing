@@ -1,0 +1,723 @@
+<!doctype html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<meta name="robots" content="noindex,nofollow">
+<title>AURAV · Ponete el visor</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Montserrat:wght@300;500;600;700&family=Inter:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+/* Página de un solo mundo: noche azul AURAV. A la derecha, fijo, un alumno que se pone el visor
+   a medida que se baja. Todo lo demás es tipografía grande, aire y una línea celeste. */
+:root{
+  --bg:#041e3c; --deep:#03152b; --raised:#0b2a4f; --line:#1f3d63;
+  --ink:#f9f8fa; --muted:#a9b8cc; --sky:#07adfd; --sky-dim:#0b4f7d; --gold:#cca762; --orange:#f5a524;
+  --display:Montserrat,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --sans:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;
+  --p:0;
+  color-scheme:dark;
+}
+*{box-sizing:border-box}
+html{scroll-behavior:smooth}
+body{background:var(--bg);color:var(--ink);font-family:var(--sans);font-size:17px;line-height:1.6;margin:0;overflow-x:clip}
+h1,h2,h3{font-family:var(--display);font-weight:600;letter-spacing:-0.025em;line-height:1;margin:0;text-wrap:balance}
+p{margin:0}
+a{color:inherit}
+img{display:block;max-width:100%}
+:focus-visible{outline:2px solid var(--sky);outline-offset:3px}
+.g{padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+
+/* barra y medidor de calibración */
+.barra{position:fixed;top:0;left:0;right:0;z-index:30;padding-top:env(safe-area-inset-top,0px);background:rgba(4,30,60,.88)}
+.barra .in{display:flex;align-items:center;justify-content:space-between;gap:16px;padding-block:18px;padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:max(24px,env(safe-area-inset-right,0px))}
+.marca{font-family:var(--display);font-weight:700;font-size:20px;letter-spacing:.06em;text-decoration:none}
+.marca span,.wm span{color:var(--sky)}
+.avion{width:100%;max-width:620px;height:auto;overflow:visible}
+.avion .m{transition:opacity .5s}
+.avion .q{fill:var(--orange);font:700 30px var(--display)}
+.avion .d{opacity:0}
+.visto .avion .q{opacity:0}
+.visto .avion .d{opacity:1}
+.visto .avion .m:nth-of-type(2) *{transition-delay:.25s}
+.visto .avion .m:nth-of-type(3) *{transition-delay:.5s}
+.visto .avion .m:nth-of-type(4) *{transition-delay:.75s}
+.avion .q,.avion .d{transition:opacity .5s}
+.ver{font-family:var(--display);font-weight:600;color:var(--sky);font-size:clamp(24px,2.4vw,36px);letter-spacing:-0.02em;opacity:.15;transition:opacity .8s .9s}
+.visto .ver{opacity:1}
+.complementa{font-family:var(--display);font-size:clamp(22px,2.2vw,32px);font-weight:600;letter-spacing:-0.02em;margin-top:56px;line-height:1.2}
+.complementa span{color:var(--sky);display:block}
+.estado-visor{font-size:13px;color:var(--muted);font-variant-numeric:tabular-nums;display:flex;align-items:center;gap:10px}
+.estado-visor i{display:inline-block;width:7px;height:7px;border-radius:50%;background:var(--sky-dim);transition:background-color .3s,box-shadow .3s}
+.on .estado-visor i{background:var(--sky);box-shadow:0 0 10px var(--sky)}
+.medidor{position:fixed;left:0;top:0;height:2px;width:100%;transform-origin:left;transform:scaleX(var(--p));background:var(--sky);z-index:31}
+.btn{display:inline-flex;align-items:center;gap:10px;font:600 15px/1 var(--sans);text-decoration:none;color:var(--bg);background:var(--sky);padding:15px 22px;border-radius:999px;border:0;cursor:pointer;transition:transform .2s,background-color .2s}
+.btn:hover{transform:translateY(-2px);background:#3cc0ff}
+.btn:active{transform:none}
+.btn.fino{background:transparent;color:var(--ink);box-shadow:inset 0 0 0 1px var(--line)}
+.btn.fino:hover{box-shadow:inset 0 0 0 1px var(--sky);background:transparent}
+.barra .btn{padding:11px 18px;font-size:14px}
+
+/* escenario: texto a la izquierda, alumno fijo a la derecha */
+.escenario{display:block}
+.texto{min-width:0}
+
+.cap{min-height:100svh;display:flex;flex-direction:column;justify-content:center;gap:28px;padding-block:120px;padding-left:max(24px,env(safe-area-inset-left,0px));padding-right:24px;max-width:760px;margin-left:clamp(0px,6vw,110px)}
+.cap h2{font-size:clamp(40px,5.2vw,84px);max-width:13ch}
+.cap .lead{font-size:clamp(18px,1.4vw,21px);color:var(--muted);max-width:44ch}
+.cap .lead b{color:var(--ink);font-weight:500}
+
+.hero h1{font-size:clamp(56px,9vw,150px);letter-spacing:-0.04em;line-height:.92}
+.hero h1 span{display:block;font-weight:300;color:var(--sky)}
+.acciones{display:flex;flex-wrap:wrap;gap:12px;align-items:center}
+.bajar{font-size:14px;color:var(--muted);display:flex;align-items:center;gap:12px}
+.bajar i{width:1px;height:44px;background:linear-gradient(var(--sky),transparent);display:inline-block;animation:baja 2.4s ease-in-out infinite}
+@keyframes baja{0%{transform:scaleY(.2);transform-origin:top}50%{transform:scaleY(1);transform-origin:top}100%{transform:scaleY(.2);transform-origin:bottom}}
+
+/* problema: tres frases que se encienden */
+.tres{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:10px}
+.tres li{font-family:var(--display);font-size:clamp(22px,2.2vw,32px);font-weight:500;letter-spacing:-0.02em;color:var(--line);transition:color .6s}
+.tres li.vista{color:var(--ink)}
+
+/* juegos */
+.juegos{display:flex;flex-direction:column;gap:2px;max-width:640px}
+.juego{display:grid;grid-template-columns:1fr auto;gap:6px 24px;align-items:baseline;padding:20px 0;cursor:pointer;background:none;border:0;color:inherit;text-align:left;font:inherit;width:100%;position:relative}
+.juego::after{content:"";position:absolute;left:0;right:0;bottom:0;height:1px;background:var(--line)}
+.juego::before{content:"";position:absolute;left:0;bottom:0;height:1px;width:100%;background:var(--sky);transform:scaleX(0);transform-origin:left;transition:transform .5s;z-index:1}
+.juego[aria-expanded="true"]::before,.juego:hover::before{transform:scaleX(1)}
+.juego h3{font-size:clamp(22px,2vw,30px);font-weight:500}
+.juego .tag{font-size:13px;color:var(--muted)}
+.juego[aria-expanded="true"] .tag{color:var(--sky)}
+.detalle{display:grid;grid-template-rows:0fr;transition:grid-template-rows .45s ease}
+.detalle.abierto{grid-template-rows:1fr}
+.detalle > div{overflow:hidden}
+.detalle .in{display:grid;grid-template-columns:minmax(0,1.1fr) minmax(0,1fr);gap:20px;padding:18px 0 26px;align-items:start}
+.detalle img{width:100%;aspect-ratio:16/10;object-fit:cover;border-radius:14px}
+.detalle p{color:var(--muted);font-size:16px}
+.detalle a{color:var(--sky);font-weight:500;text-decoration:none;display:inline-block;margin-top:12px}
+.detalle a:hover{text-decoration:underline}
+
+/* el aula */
+.aula-sec{padding-block:140px 120px}
+.aula-cab{display:flex;flex-direction:column;gap:22px;max-width:760px}
+.aula-cab h2{font-size:clamp(40px,5.2vw,84px);max-width:14ch}
+.vistas{display:inline-flex;gap:4px;padding:4px;border-radius:999px;box-shadow:inset 0 0 0 1px var(--line);margin-top:8px;width:max-content;max-width:100%}
+.vistas button{all:unset;cursor:pointer;padding:10px 18px;border-radius:999px;font-size:14px;font-weight:500;color:var(--muted);transition:background-color .25s,color .25s}
+.vistas button[aria-pressed="true"]{background:var(--ink);color:var(--bg)}
+.vistas button:focus-visible{outline:2px solid var(--sky)}
+.pantalla{margin-top:40px;background:#f9f8fa;color:#041e3c;border-radius:20px;overflow:hidden;max-width:1100px;box-shadow:0 0 0 1px var(--line),0 40px 120px -40px rgba(7,173,253,.35)}
+.pantalla .top{display:flex;align-items:center;gap:14px;padding:14px 20px;background:#fff;border-bottom:1px solid #d9dfe8;font-size:14px}
+.pantalla .top b{font-family:var(--display);letter-spacing:.24em;font-size:14px}
+.pantalla .top span{color:#4a5a70}
+.pantalla .top .yo{margin-left:auto;display:flex;align-items:center;gap:8px;color:#041e3c;font-weight:500}
+.pantalla .top .yo i{width:26px;height:26px;border-radius:50%;background:#e3f4fe;display:grid;place-items:center;font-style:normal;font-size:12px;color:#0072ad;font-weight:600}
+.al{display:grid;grid-template-columns:280px 1fr;min-height:420px}
+.al aside{border-right:1px solid #d9dfe8;padding:22px 0;background:#fff}
+.al aside h4{font-family:var(--display);font-size:16px;margin:0 22px 6px}
+.al aside .sub{font-size:13px;color:#4a5a70;margin:0 22px}
+.barrita{height:6px;background:#d9dfe8;border-radius:3px;margin:14px 22px 18px;overflow:hidden}
+.barrita i{display:block;height:100%;background:#07adfd;width:0;transition:width 1.2s ease}
+.pasos{list-style:none;margin:0;padding:0}
+.pasos li{display:flex;gap:12px;padding:12px 22px;font-size:14px;line-height:1.35;align-items:flex-start}
+.pasos li small{display:block;color:#4a5a70;font-size:12.5px;margin-top:2px}
+.pasos .t{width:20px;height:20px;border-radius:50%;flex:none;box-shadow:inset 0 0 0 1.5px #d9dfe8;display:grid;place-items:center;font-size:11px}
+.pasos .ok .t{background:#1e7d4f;box-shadow:none;color:#fff}
+.pasos .ya{background:#e3f4fe}
+.pasos .ya .t{box-shadow:inset 0 0 0 1.5px #0072ad;color:#0072ad;font-weight:700}
+.al main{padding:26px;display:flex;flex-direction:column;gap:18px;min-width:0}
+.al main .rot{font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#0072ad}
+.al main h5{font-family:var(--display);font-size:22px;margin:0;line-height:1.2}
+.vivo{display:flex;justify-content:space-between;gap:16px;align-items:center;padding:16px 18px;background:#e3f4fe;border-radius:12px;flex-wrap:wrap}
+.vivo p{font-size:14px;color:#4a5a70}
+.vivo b{color:#041e3c}
+.vivo .e{background:#0072ad;color:#fff;font-size:13px;font-weight:600;padding:9px 14px;border-radius:999px}
+.tarjetas{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:14px}
+.tj{border:1px solid #d9dfe8;border-radius:12px;overflow:hidden;background:#fff}
+.tj img{width:100%;aspect-ratio:16/8;object-fit:cover}
+.tj div{padding:12px 14px;font-size:14px}
+.tj div b{display:block;font-family:var(--display);font-size:15px}
+.tj div span{color:#4a5a70;font-size:13px}
+.tabla{overflow-x:auto;padding:6px 6px 14px}
+table{border-collapse:collapse;width:100%;min-width:620px;font-size:14px}
+th,td{text-align:left;padding:13px 16px;border-bottom:1px solid #e4e8ee}
+th{font-size:11.5px;letter-spacing:.12em;text-transform:uppercase;color:#4a5a70;font-weight:600}
+td.n{font-variant-numeric:tabular-nums;font-weight:600}
+.est{font-size:12px;font-weight:600;padding:4px 9px;border-radius:999px;white-space:nowrap}
+.est.ok{background:#e3f5ec;color:#1e7d4f}.est.cu{background:#e3f4fe;color:#0072ad}.est.no{background:#f1f3f6;color:#4a5a70}
+.ins{padding:22px 26px 0}
+.ins h5{font-family:var(--display);font-size:20px;margin:6px 0 0}
+.muestra{font-size:13px;color:var(--muted);margin-top:16px}
+
+/* video */
+.video-sec{padding-block:140px 40px;display:flex;flex-direction:column;gap:36px}
+.video-cab{display:flex;flex-direction:column;gap:18px;margin-left:clamp(0px,6vw,110px);max-width:760px}
+.video-cab h2{font-size:clamp(40px,5.2vw,84px)}
+.video-cab .lead{color:var(--muted);font-size:clamp(18px,1.4vw,21px)}
+.video{position:relative;display:block;aspect-ratio:16/9;max-width:1100px;width:100%;margin-left:clamp(0px,6vw,110px);border-radius:20px;overflow:hidden;background:var(--deep);box-shadow:0 0 0 1px var(--line),0 40px 120px -40px rgba(7,173,253,.35);text-decoration:none;color:var(--ink)}
+.video img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:.45;filter:saturate(.7);transition:opacity .4s,transform .8s}
+.video:hover img{opacity:.6;transform:scale(1.03)}
+.video .play{position:absolute;left:50%;top:50%;width:88px;height:88px;margin:-44px 0 0 -44px;border-radius:50%;background:var(--sky);color:var(--bg);display:grid;place-items:center;padding-left:6px;transition:transform .25s}
+.video:hover .play{transform:scale(1.08)}
+.video-pie{position:absolute;left:22px;bottom:18px;font-size:14px;color:var(--muted)}
+.video iframe{position:absolute;inset:0;width:100%;height:100%;border:0}
+/* dónde */
+.donde{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:1px;background:var(--line);border-radius:16px;overflow:hidden;max-width:760px}
+.donde div{background:var(--bg);padding:26px 22px;display:flex;flex-direction:column;gap:8px}
+.donde b{font-family:var(--display);font-size:20px;font-weight:600}
+.donde span{color:var(--muted);font-size:15px}
+
+/* cierre */
+.cierre{padding-block:160px 120px;display:grid;grid-template-columns:minmax(0,1fr) auto;gap:48px;align-items:end;max-width:1100px}
+.cierre h2{font-size:clamp(44px,6.4vw,110px);max-width:11ch}
+.cierre .lead{color:var(--muted);max-width:42ch;font-size:18px}
+.cierre .num{color:var(--ink);font-weight:600;user-select:all;font-variant-numeric:tabular-nums}
+.qr{margin:0;background:#f9f8fa;color:#041e3c;padding:18px;border-radius:18px;width:200px;display:flex;flex-direction:column;gap:12px}
+.qr svg{width:100%;height:auto;display:block}
+.qr figcaption{font-size:13px;line-height:1.35}
+footer{border-top:1px solid var(--line);padding-block:32px 40px;display:flex;justify-content:space-between;gap:16px;flex-wrap:wrap;font-size:13px;color:var(--muted)}
+footer b{font-family:var(--display);letter-spacing:.06em;color:var(--ink);font-size:16px}
+
+/* entradas */
+.rv{transition:opacity .8s ease,transform .8s cubic-bezier(.2,.7,.2,1)}
+.js .rv.w{opacity:0;transform:translateY(28px)}
+
+/* el alumno */
+#hud,#hud2{opacity:0;transition:opacity .6s}
+.on #hud{opacity:1}
+.lens{transition:opacity .5s,fill .5s}
+.on .lens{opacity:1;fill:rgba(7,173,253,.25)}
+.dentro #hud2{opacity:1}
+.barrido{animation:barre 3.2s linear infinite}
+@keyframes barre{from{transform:translateY(-34px)}to{transform:translateY(34px)}}
+
+@media (prefers-reduced-motion:reduce){
+  .rv,.detalle,.btn,.juego::before{transition:none!important}
+  .js .rv.w{opacity:1;transform:none}
+  .bajar i,.barrido{animation:none}
+  html{scroll-behavior:auto}
+}
+
+
+
+.marco-al{position:relative;width:min(27vw,400px);aspect-ratio:560/1266;max-height:80svh;border-radius:26px;overflow:hidden;background:var(--deep);box-shadow:0 0 0 1px var(--line),0 30px 140px -30px rgba(7,173,253,.45);max-width:100%}
+.marco-al img{position:absolute;inset:0;width:100%;height:100%;object-fit:cover;opacity:0;transform:scale(1.06);transition:opacity .25s linear}
+.marco-al img.on{opacity:1}
+.esq{position:absolute;width:22px;height:22px;border:2px solid var(--sky);opacity:.85}
+.esq.a{top:12px;left:12px;border-right:0;border-bottom:0;border-radius:8px 0 0 0}
+.esq.b{top:12px;right:12px;border-left:0;border-bottom:0;border-radius:0 8px 0 0}
+.esq.c{bottom:12px;left:12px;border-right:0;border-top:0;border-radius:0 0 0 8px}
+.esq.d{bottom:12px;right:12px;border-left:0;border-top:0;border-radius:0 0 8px 0}
+.paso{font-size:14px;color:var(--muted);min-height:1.6em}
+.paso b{color:var(--sky);font-weight:600;margin-right:8px;font-variant-numeric:tabular-nums}
+.logo{height:22px;width:auto;display:block}
+footer .logo{height:18px}
+/* portada 3D */
+.portal{height:380svh;position:relative;background:#020b18}
+.portal-pin{position:sticky;top:0;height:100svh;overflow:hidden}
+#pano{position:absolute;inset:0;width:100%;height:100%;display:block;touch-action:pan-y}
+.portal-pin.dentro #pano{cursor:grab}
+.destello{position:absolute;inset:0;background:radial-gradient(circle at 50% 50%,#e9f8ff,#07adfd 45%,#020b18 80%);opacity:0;pointer-events:none}
+.portal-velo{position:absolute;inset:0;background:linear-gradient(to top,rgba(2,11,24,.9),rgba(2,11,24,.3) 45%,transparent 70%);pointer-events:none;opacity:0}
+.intro{position:absolute;left:max(24px,env(safe-area-inset-left,0px));top:50%;transform:translateY(-50%);max-width:520px;margin-left:clamp(0px,5vw,90px);display:flex;flex-direction:column;gap:24px;z-index:2}
+.rotulo{font-family:var(--display);font-size:12px;font-weight:600;letter-spacing:.32em;color:var(--sky)}
+.intro h1{font-size:clamp(56px,8vw,140px);letter-spacing:-0.045em;line-height:.9}
+.intro h1 span{display:block;font-weight:300;color:var(--sky)}
+.intro .lead{font-size:clamp(17px,1.3vw,20px);color:var(--muted);max-width:36ch}
+.intro .lead b{color:var(--ink);font-weight:500}
+.tele{position:absolute;right:max(24px,env(safe-area-inset-right,0px));bottom:max(28px,env(safe-area-inset-bottom,0px));display:flex;gap:34px;z-index:2;font-variant-numeric:tabular-nums;transition:opacity .5s}
+.tele div{display:flex;flex-direction:column;gap:4px}
+.tele span{font-size:11px;letter-spacing:.28em;text-transform:uppercase;color:#5f7c9c;font-family:var(--display);font-weight:600}
+.tele b{font-family:var(--display);font-weight:500;font-size:15px;color:var(--ink);letter-spacing:.02em}
+.dentro .tele{opacity:0}
+.portal-txt{z-index:3;position:absolute;left:max(24px,env(safe-area-inset-left,0px));right:24px;bottom:max(56px,env(safe-area-inset-bottom,0px));display:flex;flex-direction:column;gap:18px;max-width:640px;margin-left:clamp(0px,6vw,110px);opacity:0;transform:translateY(24px);transition:opacity .6s,transform .6s;pointer-events:none}
+.portal-txt.ver{opacity:1;transform:none;pointer-events:auto}
+.portal-txt h2{font-size:clamp(44px,6.4vw,110px);color:#f9f8fa;text-shadow:0 2px 30px rgba(3,21,43,.7)}
+.portal-txt p{color:#f9f8fa;font-size:18px;max-width:40ch;text-shadow:0 1px 16px rgba(3,21,43,.9)}
+.mira{position:absolute;top:50%;left:50%;width:44px;height:44px;margin:-22px 0 0 -22px;border-radius:50%;box-shadow:inset 0 0 0 2px rgba(249,248,250,.85);opacity:0;transition:opacity .6s;pointer-events:none}
+.mira::after{content:"";position:absolute;inset:18px;border-radius:50%;background:var(--sky)}
+.portal-pin.dentro .mira{opacity:1}
+.logo{height:22px;width:auto;display:block}
+footer .logo{height:18px}
+@media (max-width:900px){
+  .intro{left:0;right:0;top:auto;bottom:120px;transform:none;margin:0;padding:0 20px;max-width:none}
+  .intro h1{font-size:16vw}
+  .tele{left:20px;right:20px;gap:18px;bottom:24px}
+  .tele div:nth-child(3){display:none}
+  .video-cab,.video{margin-left:0}
+  .video-sec{padding-block:100px 20px}
+}
+
+@media (max-width:900px){
+  .escenario{display:block}
+  .texto{position:relative;z-index:1}
+  .cap{margin-left:0;min-height:88svh;padding-block:110px 80px}
+  .cap h2,.aula-cab h2{font-size:10.5vw}
+  .estado-visor span{display:none}
+  .detalle .in{grid-template-columns:1fr}
+  .al{grid-template-columns:1fr}
+  .al aside{border-right:0;border-bottom:1px solid #d9dfe8}
+  .tarjetas{grid-template-columns:1fr}
+  .donde{grid-template-columns:1fr}
+  .cierre{grid-template-columns:1fr;padding-block:110px 80px}
+  .cierre h2{font-size:13vw}
+  .aula-sec{padding-block:100px 80px;position:relative;z-index:1}
+}
+</style>
+</head>
+<body>
+
+
+<div class="medidor" aria-hidden="true"></div>
+<header class="barra">
+  <div class="in">
+    <a class="marca" href="#inicio" aria-label="AURAV"><img class="logo" src="img/logo-aurav.png" alt="AURAV" width="900" height="182"></a>
+    <div class="estado-visor" aria-hidden="true"><i></i><span id="estado">Visor en espera</span></div>
+    <a class="btn wa" href="#demo">Pedir una demo</a>
+  </div>
+</header>
+
+<section class="portal" id="inicio" aria-labelledby="h1">
+  <div class="portal-pin" id="portal-pin">
+    <canvas id="pano" aria-label="Animación 3D: una cabeza humana se pone el visor de realidad virtual y la cámara entra al juego del Cessna 172S. Al final se puede arrastrar para mirar alrededor."></canvas>
+    <div class="destello" id="destello" aria-hidden="true"></div>
+    <div class="portal-velo" id="velo"></div>
+    <div class="intro" id="intro">
+      <p class="rotulo">AURAV · VR-01</p>
+      <h1 id="h1">Ver para<span>volar.</span></h1>
+      <p class="lead">Capacitación aeronáutica en realidad virtual. Se practica el procedimiento <b>antes de tocar el avión</b>, y cada intento queda en el aula.</p>
+      <span class="bajar"><i></i>Bajá con la ruedita y entrá al visor</span>
+    </div>
+    <div class="tele" id="tele" aria-hidden="true">
+      <div><span>Secuencia</span><b id="t-fase">01 · En espera</b></div>
+      <div><span>Visor</span><b id="t-visor">000 %</b></div>
+      <div><span>Rango</span><b id="t-rango">Alumno</b></div>
+    </div>
+    <span class="mira" aria-hidden="true"></span>
+    <div class="portal-txt" id="portal-txt">
+      <h2 id="h-portal">Ya estás adentro</h2>
+      <p>Esto es lo que ve con el visor puesto: el Cessna 172S en la plataforma y los doce puntos de la inspección prevuelo esperándolo. Arrastrá para mirar alrededor.</p>
+      <div class="acciones"><a class="btn wa" href="#demo">Pedir una demo con el visor</a><a class="btn fino" href="https://ivan-i-aguilar.github.io/aurav-prevuelo/" target="_blank" rel="noopener">Probar el juego</a></div>
+    </div>
+  </div>
+</section>
+
+<section class="video-sec g" id="video" aria-labelledby="h-video">
+  <div class="video-cab">
+    <h2 id="h-video" class="rv">Miralo en un minuto</h2>
+    <p class="lead rv">Un alumno, un visor y un avión. De la caja a la plataforma.</p>
+  </div>
+  <a class="video rv" id="video-caja" href="#video" aria-label="Ver el video de AURAV">
+    <img src="img/juego-vuelta.jpg" alt="" width="800" height="450" loading="lazy">
+    <span class="play" aria-hidden="true"><svg width="26" height="30" viewBox="0 0 22 26"><path d="M0 0l22 13L0 26z" fill="currentColor"/></svg></span>
+    <span class="video-pie" id="video-pie">Video en preparación</span>
+  </a>
+</section>
+
+<div class="escenario">
+  <div class="texto">
+
+    <section class="cap" aria-labelledby="h-hoy">
+      <h2 id="h-hoy" class="rv">Llega a la práctica… ¿y dónde mira?</h2>
+      <ul class="tres" id="tres">
+        <li>El avión ocupado en tierra.</li>
+        <li>La hélice girando a metros.</li>
+        <li>Un error que no tiene ensayo.</li>
+      </ul>
+      <div id="plano"><svg class="avion" viewBox="0 0 600 210" role="img" aria-label="Avión dibujado en líneas: los signos de pregunta se vuelven puntos de inspección">
+        <g fill="none" stroke="var(--sky)" stroke-width="2" stroke-linejoin="round" stroke-linecap="round">
+          <path d="M70 112 L92 62 L112 62 L138 104 L260 102 C285 84 320 80 352 86 L452 100 C470 104 480 108 486 114 L486 124 C470 132 430 136 380 136 L180 132 C140 130 110 124 70 116 Z"/>
+          <path d="M290 80 L430 83" stroke="#f9f8fa" stroke-width="5"/>
+          <path d="M392 84 L366 132"/><path d="M58 112 L124 112" stroke="#f9f8fa" stroke-width="3"/>
+          <path d="M334 92 L378 90 L382 104 L334 106 Z"/>
+          <path d="M352 136 L352 164"/><circle cx="352" cy="172" r="8"/>
+          <path d="M462 132 L462 160"/><circle cx="462" cy="167" r="7"/>
+          <path d="M494 88 L494 150" stroke="#f9f8fa" stroke-width="3"/>
+        </g>
+        <g class="m"><text class="q" x="350" y="64">?</text><circle class="d" cx="358" cy="70" r="9" fill="var(--sky)"/></g>
+        <g class="m"><text class="q" x="84" y="46">?</text><circle class="d" cx="92" cy="52" r="9" fill="var(--sky)"/></g>
+        <g class="m"><text class="q" x="512" y="88">?</text><circle class="d" cx="520" cy="94" r="9" fill="var(--sky)"/></g>
+        <g class="m"><text class="q" x="322" y="168">?</text><circle class="d" cx="330" cy="164" r="9" fill="var(--sky)"/></g>
+      </svg>
+      <p class="ver">Ver para volar</p></div>
+      <p class="lead rv">La primera vez no debería ser la de verdad. Con AURAV, la persona llega a la plataforma sabiendo dónde pararse y qué mirar. El instructor sigue siendo el instructor.</p>
+    </section>
+
+    <section class="cap" aria-labelledby="h-dentro">
+      <h2 id="h-dentro" class="rv">Ahora, adentro</h2>
+      <p class="lead rv">Un juego en 3D que se abre en el navegador del visor. Sin app, sin instalar nada.</p>
+      <div class="juegos" id="juegos">
+        <button class="juego" aria-expanded="true" aria-controls="d0"><h3>La vuelta al avión</h3><span class="tag">Disponible</span></button>
+        <div class="detalle abierto" id="d0"><div><div class="in">
+          <img src="img/juego-vuelta.jpg" alt="Captura del juego: Cessna 172S en la plataforma con los doce puntos de inspección marcados" width="800" height="450" loading="lazy">
+          <div><p>La inspección prevuelo de un Cessna 172S: caminar alrededor del avión en 3D, revisar cada punto y terminar con una nota que detalla los errores.</p><a href="https://ivan-i-aguilar.github.io/aurav-prevuelo/" target="_blank" rel="noopener">Abrir el juego</a></div>
+        </div></div></div>
+      </div>
+    </section>
+
+    <section class="cap" aria-labelledby="h-donde">
+      <h2 id="h-donde" class="rv">El mismo enlace, en todos lados</h2>
+      <div class="donde rv">
+        <div><b>Meta Quest</b><span>Botón «Entrar en VR».</span></div>
+        <div><b>Computadora</b><span>Teclado y mouse, para el aula.</span></div>
+        <div><b>Celular</b><span>Para repasar antes de volar.</span></div>
+      </div>
+    </section>
+
+  </div>
+
+</div>
+
+<section class="aula-sec g" id="aula" aria-labelledby="h-aula">
+  <div class="aula-cab" style="margin-left:clamp(0px,6vw,110px)">
+    <h2 id="h-aula" class="rv">Todo queda en el aula</h2>
+    <p class="lead rv" style="color:var(--muted);max-width:48ch;font-size:clamp(18px,1.4vw,21px)">Aurav-web es el aula virtual: el material del curso, la clase en vivo y la nota de cada juego, en el mismo lugar. El alumno sabe qué le falta; el instructor sabe quién practicó qué.</p>
+    <div class="vistas" role="group" aria-label="Vista del aula">
+      <button type="button" aria-pressed="true" data-v="al">Vista del alumno</button>
+      <button type="button" aria-pressed="false" data-v="in">Vista del instructor</button>
+    </div>
+  </div>
+
+  <div class="pantalla rv" style="margin-left:clamp(0px,6vw,110px)">
+    <div class="top"><b>AURAV</b><span>Aurav-web</span><span class="yo"><i id="ini">MR</i><span id="quien">Alumno</span></span></div>
+
+    <div class="al" id="v-al">
+      <aside>
+        <h4>Inspección prevuelo</h4>
+        <p class="sub">Piloto privado · Módulo 1</p>
+        <div class="barrita"><i id="avance"></i></div>
+        <ul class="pasos">
+          <li class="ok"><span class="t">✓</span><span>Antes de empezar<small>Leído</small></span></li>
+          <li class="ok"><span class="t">✓</span><span>Cuestionario previo<small>9 de 10</small></span></li>
+          <li class="ya"><span class="t">3</span><span>El juego en el visor<small>En curso</small></span></li>
+          <li><span class="t"></span><span>Cuestionario final<small>Se habilita al terminar</small></span></li>
+        </ul>
+      </aside>
+      <main>
+        <span class="rot">Próxima clase en vivo</span>
+        <div class="vivo"><p><b>Cómo leer la lista de chequeo prevuelo</b><br>Martes 18:00 · 40 minutos · queda asentado quién entró</p><span class="e">Entrar a la clase</span></div>
+        <span class="rot">Tus juegos</span>
+        <div class="tarjetas">
+          <div class="tj"><img src="img/juego-vuelta.jpg" alt="" width="800" height="450" loading="lazy"><div><b>La vuelta al avión · Cessna 172S</b><span>Último intento: 11 de 12 puntos</span></div></div>
+        </div>
+      </main>
+    </div>
+
+    <div id="v-in" hidden>
+      <div class="ins"><span class="rot" style="font-size:12px;font-weight:600;letter-spacing:.14em;text-transform:uppercase;color:#0072ad">Panel del instructor</span><h5>Inspección prevuelo · curso de piloto privado, octubre</h5></div>
+      <div class="tabla">
+        <table>
+          <thead><tr><th>Persona</th><th>Avance</th><th>Juego</th><th>Nota</th><th>Última actividad</th></tr></thead>
+          <tbody>
+            <tr><td>Matías R.</td><td>3 de 4</td><td><span class="est cu">En curso</span></td><td class="n">—</td><td>hoy</td></tr>
+            <tr><td>Carla V.</td><td>4 de 4</td><td><span class="est ok">Aprobado</span></td><td class="n">92</td><td>ayer</td></tr>
+            <tr><td>Diego A.</td><td>4 de 4</td><td><span class="est ok">Aprobado</span></td><td class="n">71</td><td>hace 3 días</td></tr>
+            <tr><td>Paula S.</td><td>2 de 4</td><td><span class="est no">Sin empezar</span></td><td class="n">—</td><td>hace 6 días</td></tr>
+            <tr><td>Nicolás F.</td><td>4 de 4</td><td><span class="est ok">Aprobado</span></td><td class="n">88</td><td>hace 1 día</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </div>
+  <p class="muestra" style="margin-left:clamp(0px,6vw,110px)">Pantalla de muestra: los nombres y las notas son de ejemplo.</p>
+  <p class="complementa rv" style="margin-left:clamp(0px,6vw,110px)">Complementa al instructor.<span>Nunca lo reemplaza.</span></p>
+</section>
+
+<section class="cierre g" id="demo" aria-labelledby="h-demo" style="margin-left:clamp(0px,6vw,110px)">
+  <div style="display:flex;flex-direction:column;gap:28px">
+    <h2 id="h-demo" class="rv">Ponete el visor</h2>
+    <p class="lead rv">Llevo el visor a tu base y lo prueban ahí mismo, con tu gente. Escribime por WhatsApp al <span class="num">+54 9 266 503-3508</span>.</p>
+    <div class="rv"><a class="btn wa" href="#demo">Coordinar una demo</a></div>
+  </div>
+  <figure class="qr rv"><svg class="qr-svg" viewBox="0 0 29 29" role="img" aria-label="Código QR que abre WhatsApp al +54 9 266 503-3508" shape-rendering="crispEdges"><path fill="currentColor" d="M0 0h1v1h-1zM1 0h1v1h-1zM2 0h1v1h-1zM3 0h1v1h-1zM4 0h1v1h-1zM5 0h1v1h-1zM6 0h1v1h-1zM9 0h1v1h-1zM12 0h1v1h-1zM15 0h1v1h-1zM16 0h1v1h-1zM19 0h1v1h-1zM22 0h1v1h-1zM23 0h1v1h-1zM24 0h1v1h-1zM25 0h1v1h-1zM26 0h1v1h-1zM27 0h1v1h-1zM28 0h1v1h-1zM0 1h1v1h-1zM6 1h1v1h-1zM12 1h1v1h-1zM17 1h1v1h-1zM18 1h1v1h-1zM22 1h1v1h-1zM28 1h1v1h-1zM0 2h1v1h-1zM2 2h1v1h-1zM3 2h1v1h-1zM4 2h1v1h-1zM6 2h1v1h-1zM8 2h1v1h-1zM10 2h1v1h-1zM11 2h1v1h-1zM14 2h1v1h-1zM16 2h1v1h-1zM22 2h1v1h-1zM24 2h1v1h-1zM25 2h1v1h-1zM26 2h1v1h-1zM28 2h1v1h-1zM0 3h1v1h-1zM2 3h1v1h-1zM3 3h1v1h-1zM4 3h1v1h-1zM6 3h1v1h-1zM8 3h1v1h-1zM10 3h1v1h-1zM11 3h1v1h-1zM12 3h1v1h-1zM16 3h1v1h-1zM17 3h1v1h-1zM18 3h1v1h-1zM20 3h1v1h-1zM22 3h1v1h-1zM24 3h1v1h-1zM25 3h1v1h-1zM26 3h1v1h-1zM28 3h1v1h-1zM0 4h1v1h-1zM2 4h1v1h-1zM3 4h1v1h-1zM4 4h1v1h-1zM6 4h1v1h-1zM8 4h1v1h-1zM9 4h1v1h-1zM11 4h1v1h-1zM13 4h1v1h-1zM14 4h1v1h-1zM15 4h1v1h-1zM19 4h1v1h-1zM22 4h1v1h-1zM24 4h1v1h-1zM25 4h1v1h-1zM26 4h1v1h-1zM28 4h1v1h-1zM0 5h1v1h-1zM6 5h1v1h-1zM8 5h1v1h-1zM11 5h1v1h-1zM13 5h1v1h-1zM14 5h1v1h-1zM15 5h1v1h-1zM16 5h1v1h-1zM17 5h1v1h-1zM18 5h1v1h-1zM20 5h1v1h-1zM22 5h1v1h-1zM28 5h1v1h-1zM0 6h1v1h-1zM1 6h1v1h-1zM2 6h1v1h-1zM3 6h1v1h-1zM4 6h1v1h-1zM5 6h1v1h-1zM6 6h1v1h-1zM8 6h1v1h-1zM10 6h1v1h-1zM12 6h1v1h-1zM14 6h1v1h-1zM16 6h1v1h-1zM18 6h1v1h-1zM20 6h1v1h-1zM22 6h1v1h-1zM23 6h1v1h-1zM24 6h1v1h-1zM25 6h1v1h-1zM26 6h1v1h-1zM27 6h1v1h-1zM28 6h1v1h-1zM8 7h1v1h-1zM11 7h1v1h-1zM13 7h1v1h-1zM15 7h1v1h-1zM20 7h1v1h-1zM0 8h1v1h-1zM2 8h1v1h-1zM3 8h1v1h-1zM4 8h1v1h-1zM5 8h1v1h-1zM6 8h1v1h-1zM9 8h1v1h-1zM11 8h1v1h-1zM14 8h1v1h-1zM15 8h1v1h-1zM17 8h1v1h-1zM18 8h1v1h-1zM20 8h1v1h-1zM22 8h1v1h-1zM23 8h1v1h-1zM24 8h1v1h-1zM25 8h1v1h-1zM26 8h1v1h-1zM0 9h1v1h-1zM1 9h1v1h-1zM2 9h1v1h-1zM3 9h1v1h-1zM7 9h1v1h-1zM9 9h1v1h-1zM10 9h1v1h-1zM11 9h1v1h-1zM15 9h1v1h-1zM16 9h1v1h-1zM19 9h1v1h-1zM21 9h1v1h-1zM22 9h1v1h-1zM23 9h1v1h-1zM24 9h1v1h-1zM28 9h1v1h-1zM0 10h1v1h-1zM1 10h1v1h-1zM2 10h1v1h-1zM3 10h1v1h-1zM4 10h1v1h-1zM5 10h1v1h-1zM6 10h1v1h-1zM7 10h1v1h-1zM11 10h1v1h-1zM23 10h1v1h-1zM24 10h1v1h-1zM3 11h1v1h-1zM5 11h1v1h-1zM7 11h1v1h-1zM9 11h1v1h-1zM11 11h1v1h-1zM12 11h1v1h-1zM14 11h1v1h-1zM16 11h1v1h-1zM19 11h1v1h-1zM20 11h1v1h-1zM23 11h1v1h-1zM25 11h1v1h-1zM27 11h1v1h-1zM0 12h1v1h-1zM1 12h1v1h-1zM4 12h1v1h-1zM6 12h1v1h-1zM8 12h1v1h-1zM9 12h1v1h-1zM10 12h1v1h-1zM11 12h1v1h-1zM12 12h1v1h-1zM16 12h1v1h-1zM17 12h1v1h-1zM18 12h1v1h-1zM20 12h1v1h-1zM21 12h1v1h-1zM25 12h1v1h-1zM26 12h1v1h-1zM0 13h1v1h-1zM1 13h1v1h-1zM3 13h1v1h-1zM4 13h1v1h-1zM7 13h1v1h-1zM8 13h1v1h-1zM9 13h1v1h-1zM12 13h1v1h-1zM13 13h1v1h-1zM14 13h1v1h-1zM15 13h1v1h-1zM19 13h1v1h-1zM21 13h1v1h-1zM22 13h1v1h-1zM23 13h1v1h-1zM24 13h1v1h-1zM28 13h1v1h-1zM0 14h1v1h-1zM4 14h1v1h-1zM5 14h1v1h-1zM6 14h1v1h-1zM8 14h1v1h-1zM10 14h1v1h-1zM11 14h1v1h-1zM13 14h1v1h-1zM14 14h1v1h-1zM15 14h1v1h-1zM16 14h1v1h-1zM18 14h1v1h-1zM22 14h1v1h-1zM25 14h1v1h-1zM26 14h1v1h-1zM1 15h1v1h-1zM3 15h1v1h-1zM4 15h1v1h-1zM10 15h1v1h-1zM11 15h1v1h-1zM12 15h1v1h-1zM13 15h1v1h-1zM15 15h1v1h-1zM18 15h1v1h-1zM19 15h1v1h-1zM20 15h1v1h-1zM22 15h1v1h-1zM23 15h1v1h-1zM27 15h1v1h-1zM0 16h1v1h-1zM2 16h1v1h-1zM6 16h1v1h-1zM7 16h1v1h-1zM8 16h1v1h-1zM9 16h1v1h-1zM11 16h1v1h-1zM12 16h1v1h-1zM14 16h1v1h-1zM15 16h1v1h-1zM17 16h1v1h-1zM18 16h1v1h-1zM20 16h1v1h-1zM21 16h1v1h-1zM25 16h1v1h-1zM26 16h1v1h-1zM0 17h1v1h-1zM7 17h1v1h-1zM8 17h1v1h-1zM9 17h1v1h-1zM10 17h1v1h-1zM11 17h1v1h-1zM15 17h1v1h-1zM16 17h1v1h-1zM17 17h1v1h-1zM19 17h1v1h-1zM22 17h1v1h-1zM24 17h1v1h-1zM26 17h1v1h-1zM28 17h1v1h-1zM0 18h1v1h-1zM2 18h1v1h-1zM4 18h1v1h-1zM6 18h1v1h-1zM10 18h1v1h-1zM11 18h1v1h-1zM18 18h1v1h-1zM23 18h1v1h-1zM24 18h1v1h-1zM26 18h1v1h-1zM0 19h1v1h-1zM2 19h1v1h-1zM3 19h1v1h-1zM8 19h1v1h-1zM9 19h1v1h-1zM10 19h1v1h-1zM11 19h1v1h-1zM12 19h1v1h-1zM14 19h1v1h-1zM16 19h1v1h-1zM18 19h1v1h-1zM19 19h1v1h-1zM24 19h1v1h-1zM27 19h1v1h-1zM0 20h1v1h-1zM4 20h1v1h-1zM6 20h1v1h-1zM7 20h1v1h-1zM8 20h1v1h-1zM10 20h1v1h-1zM12 20h1v1h-1zM16 20h1v1h-1zM18 20h1v1h-1zM20 20h1v1h-1zM21 20h1v1h-1zM22 20h1v1h-1zM23 20h1v1h-1zM24 20h1v1h-1zM26 20h1v1h-1zM27 20h1v1h-1zM28 20h1v1h-1zM8 21h1v1h-1zM11 21h1v1h-1zM13 21h1v1h-1zM14 21h1v1h-1zM15 21h1v1h-1zM17 21h1v1h-1zM18 21h1v1h-1zM19 21h1v1h-1zM20 21h1v1h-1zM24 21h1v1h-1zM25 21h1v1h-1zM26 21h1v1h-1zM27 21h1v1h-1zM28 21h1v1h-1zM0 22h1v1h-1zM1 22h1v1h-1zM2 22h1v1h-1zM3 22h1v1h-1zM4 22h1v1h-1zM5 22h1v1h-1zM6 22h1v1h-1zM12 22h1v1h-1zM13 22h1v1h-1zM14 22h1v1h-1zM15 22h1v1h-1zM16 22h1v1h-1zM17 22h1v1h-1zM19 22h1v1h-1zM20 22h1v1h-1zM22 22h1v1h-1zM24 22h1v1h-1zM25 22h1v1h-1zM26 22h1v1h-1zM0 23h1v1h-1zM6 23h1v1h-1zM8 23h1v1h-1zM11 23h1v1h-1zM13 23h1v1h-1zM15 23h1v1h-1zM17 23h1v1h-1zM18 23h1v1h-1zM20 23h1v1h-1zM24 23h1v1h-1zM28 23h1v1h-1zM0 24h1v1h-1zM2 24h1v1h-1zM3 24h1v1h-1zM4 24h1v1h-1zM6 24h1v1h-1zM8 24h1v1h-1zM10 24h1v1h-1zM12 24h1v1h-1zM14 24h1v1h-1zM15 24h1v1h-1zM20 24h1v1h-1zM21 24h1v1h-1zM22 24h1v1h-1zM23 24h1v1h-1zM24 24h1v1h-1zM26 24h1v1h-1zM27 24h1v1h-1zM28 24h1v1h-1zM0 25h1v1h-1zM2 25h1v1h-1zM3 25h1v1h-1zM4 25h1v1h-1zM6 25h1v1h-1zM8 25h1v1h-1zM10 25h1v1h-1zM11 25h1v1h-1zM12 25h1v1h-1zM15 25h1v1h-1zM16 25h1v1h-1zM18 25h1v1h-1zM19 25h1v1h-1zM21 25h1v1h-1zM25 25h1v1h-1zM26 25h1v1h-1zM0 26h1v1h-1zM2 26h1v1h-1zM3 26h1v1h-1zM4 26h1v1h-1zM6 26h1v1h-1zM8 26h1v1h-1zM9 26h1v1h-1zM10 26h1v1h-1zM12 26h1v1h-1zM13 26h1v1h-1zM14 26h1v1h-1zM18 26h1v1h-1zM20 26h1v1h-1zM22 26h1v1h-1zM23 26h1v1h-1zM24 26h1v1h-1zM25 26h1v1h-1zM26 26h1v1h-1zM27 26h1v1h-1zM0 27h1v1h-1zM6 27h1v1h-1zM11 27h1v1h-1zM13 27h1v1h-1zM16 27h1v1h-1zM19 27h1v1h-1zM20 27h1v1h-1zM23 27h1v1h-1zM25 27h1v1h-1zM27 27h1v1h-1zM0 28h1v1h-1zM1 28h1v1h-1zM2 28h1v1h-1zM3 28h1v1h-1zM4 28h1v1h-1zM5 28h1v1h-1zM6 28h1v1h-1zM8 28h1v1h-1zM9 28h1v1h-1zM13 28h1v1h-1zM14 28h1v1h-1zM16 28h1v1h-1zM18 28h1v1h-1zM21 28h1v1h-1zM23 28h1v1h-1zM24 28h1v1h-1zM25 28h1v1h-1zM26 28h1v1h-1z"/></svg><figcaption>Escaneá con el celular para escribir por WhatsApp</figcaption></figure>
+</section>
+
+<footer class="g"><img class="logo" src="img/logo-aurav.png" alt="AURAV" width="900" height="182"><span>by PLANO AÉREO · Ver para volar · 2026</span><span>Personaje 3D: Microsoft Rocketbox Avatar Library (licencia MIT)</span></footer>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/three.js/r128/three.min.js"></script>
+<script>
+document.documentElement.classList.add('js');
+const WA = 'https://wa.me/5492665033508?text=' + encodeURIComponent('Hola, vi AURAV y quiero coordinar una demo de los juegos de capacitación.');
+document.querySelectorAll('a.wa').forEach(a => { a.href = WA; a.target = '_blank'; a.rel = 'noopener'; });
+const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+const root = document.documentElement;
+
+/* portada 3D: una cabeza se pone el visor y la cámara entra al juego */
+(() => {
+  const sec = document.getElementById('inicio'), pin = document.getElementById('portal-pin'), cv = document.getElementById('pano'),
+        intro = document.getElementById('intro'), txt = document.getElementById('portal-txt'), estado = document.getElementById('estado'),
+        flash = document.getElementById('destello'), velo = document.getElementById('velo'), tFase = document.getElementById('t-fase'), tVisor = document.getElementById('t-visor'); const tRango = document.getElementById('t-rango');
+  if (!window.THREE) { pin.style.background = 'url(img/c172-360.jpg) 60% 48%/cover'; return; }
+  const T = THREE;
+  const R = new T.WebGLRenderer({ canvas: cv, antialias: true });
+  R.setPixelRatio(Math.min(2, devicePixelRatio));
+  R.outputEncoding = T.sRGBEncoding;
+  R.toneMapping = T.ACESFilmicToneMapping; R.toneMappingExposure = 1.05;
+  R.setClearColor(0x020b18, 1);
+
+  /* ---------- escena 1: la cabeza y el visor ---------- */
+  const S1 = new T.Scene();
+  S1.fog = new T.Fog(0x020b18, 14, 30);
+  const C1 = new T.PerspectiveCamera(32, 1, .1, 100);
+  S1.add(new T.HemisphereLight(0xbfd6ea, 0x0a1220, .35));
+  const key = new T.DirectionalLight(0xfff1e6, 1.15); key.position.set(-6, 6, 9); S1.add(key);
+  const rim = new T.DirectionalLight(0x07adfd, 1.7); rim.position.set(7, 3, -8); S1.add(rim);
+  const rim2 = new T.DirectionalLight(0x07adfd, .7); rim2.position.set(-8, 1, -5); S1.add(rim2);
+  const glow = new T.PointLight(0x07adfd, 0, 9); glow.position.set(0, 1.85, 4.2); S1.add(glow);
+
+  const cabeza = new T.Group(); S1.add(cabeza);
+  const charreteras = [];
+  // piso de puntos, como un hangar de noche
+  (() => {
+    const n = 2400, p = new Float32Array(n * 3);
+    for (let i = 0; i < n; i++) { const r = 4 + Math.random() * 22, a = Math.random() * Math.PI * 2; p[i * 3] = Math.cos(a) * r; p[i * 3 + 1] = -4.1; p[i * 3 + 2] = Math.sin(a) * r; }
+    const g = new T.BufferGeometry(); g.setAttribute('position', new T.BufferAttribute(p, 3));
+    S1.add(new T.Points(g, new T.PointsMaterial({ color: 0x1f5f8f, size: .05, transparent: true, opacity: .8 })));
+    const anillo = new T.Mesh(new T.RingGeometry(3.6, 3.62, 128), new T.MeshBasicMaterial({ color: 0x07adfd, transparent: true, opacity: .35, side: T.DoubleSide }));
+    anillo.rotation.x = -Math.PI / 2; anillo.position.y = -4.09; S1.add(anillo);
+  })();
+
+  fetch('img/joven.txt').then(r => r.text()).then(t => { const bin = atob(t.trim()), u8 = new Uint8Array(bin.length); for (let i = 0; i < bin.length; i++) u8[i] = bin.charCodeAt(i); const b = u8.buffer;
+    const tl = new T.TextureLoader(), tx = (u, srgb) => { const x = tl.load(u, () => pintar()); if (srgb) x.encoding = T.sRGBEncoding; x.anisotropy = 8; return x; };
+    const MAT = [
+      new T.MeshPhysicalMaterial({ map: tx('img/joven-cuerpo.jpg', 1), normalMap: tx('img/joven-cuerpo-n.jpg'), roughness: .8, metalness: 0, sheen: new T.Color(0x222831) }),
+      new T.MeshPhysicalMaterial({ map: tx('img/joven-cara.jpg', 1), normalMap: tx('img/joven-cara-n.jpg'), normalScale: new T.Vector2(.8, .8), roughness: .55, metalness: 0, clearcoat: .06, clearcoatRoughness: .6 }),
+      new T.MeshBasicMaterial({ map: tx('img/joven-pelo.png', 1), color: 0x9a918a, alphaTest: .5, side: T.DoubleSide })];
+    /* cuero cabelludo: bajo el pelo la piel se oscurece al tono del pelo, y el borde cian no lo toca */
+    const MASK = 'float hm(vec3 p){float ax=abs(p.x);float f=mix(1.6+(p.z+.9)*.36,2.12+(p.z-.9)*.55,smoothstep(.5,1.1,p.z));f=mix(f,3.12-max(0.,ax-.5)*1.5,smoothstep(1.8,2.3,p.z));return smoothstep(f-.05,f+.32,p.y);}';
+    MAT[1].onBeforeCompile = sh => {
+      sh.vertexShader = sh.vertexShader.replace('#include <common>', '#include <common>\nvarying vec3 vOP;').replace('#include <begin_vertex>', '#include <begin_vertex>\nvOP=position;');
+      sh.fragmentShader = sh.fragmentShader.replace('#include <common>', '#include <common>\nvarying vec3 vOP;' + MASK).replace('#include <map_fragment>', '#include <map_fragment>\ndiffuseColor.rgb=mix(diffuseColor.rgb,vec3(.07,.043,.028),hm(vOP)*.94);').replace('#include <dithering_fragment>', '#include <dithering_fragment>\n{float h=hm(vOP);float l=dot(gl_FragColor.rgb,vec3(.3,.5,.2));gl_FragColor.rgb=mix(gl_FragColor.rgb,vec3(.16,.105,.075)*(.55+.9*l),h*.9);}');
+    };
+    const peloSuave = new T.MeshBasicMaterial({ map: MAT[2].map, color: 0x9a918a, transparent: true, depthWrite: false, side: T.DoubleSide });
+    const borde = new T.ShaderMaterial({ transparent: true, blending: T.AdditiveBlending, depthWrite: false, uniforms: { c: { value: new T.Color(0x07adfd) } },
+      vertexShader: 'varying vec3 vN;varying vec3 vV;varying vec3 vOP;void main(){vOP=position;vec4 mv=modelViewMatrix*vec4(position,1.);vN=normalize(normalMatrix*normal);vV=normalize(-mv.xyz);gl_Position=projectionMatrix*mv;}',
+      fragmentShader: 'uniform vec3 c;varying vec3 vN;varying vec3 vV;varying vec3 vOP;' + MASK + 'void main(){float f=pow(1.-max(dot(vN,vV),0.),3.)*(1.-hm(vOP));gl_FragColor=vec4(c*f*.85,f);}' });
+    const n = new Uint32Array(b, 0, 1)[0]; let o = 4, cuerpo = null; const GEO = [];
+    for (let k = 0; k < n; k++) {
+      const h = new Uint32Array(b, o, 4), nv = h[0], ni = h[1], m = h[2]; o += 16;
+      const g = new T.BufferGeometry();
+      g.setAttribute('position', new T.BufferAttribute(new Float32Array(b.slice(o, o + nv * 12)), 3)); o += nv * 12;
+      g.setAttribute('normal', new T.BufferAttribute(new Float32Array(b.slice(o, o + nv * 12)), 3)); o += nv * 12;
+      g.setAttribute('uv', new T.BufferAttribute(new Float32Array(b.slice(o, o + nv * 8)), 2)); o += nv * 8;
+      g.setIndex(new T.BufferAttribute(new Uint16Array(b.slice(o, o + ni * 2)), 1)); o += ni * 2 + (ni % 2 ? 2 : 0);
+      cabeza.add(new T.Mesh(g, MAT[m])); if (m !== 2) cabeza.add(new T.Mesh(g, borde)); else { const ps = new T.Mesh(g, peloSuave); ps.renderOrder = 2; cabeza.add(ps); }
+      if (m === 0) cuerpo = g; GEO[m] = g;
+    }
+    // charreteras sobre los hombros: los galones van apareciendo con el visor
+    { const P = cuerpo.attributes.position, alto = (x0, z0) => { let m = -9, r = .5; for (let i = 0; i < P.count; i++) { const dx = P.getX(i) - x0, dz = P.getZ(i) - z0; if (dx * dx + dz * dz < r * r) m = Math.max(m, P.getY(i)); } return m; };
+      const placa = new T.Shape(); const L = 1.4, A = .75, r = .26; placa.moveTo(-L / 2, -A / 2); placa.lineTo(L / 2 - r, -A / 2); placa.quadraticCurveTo(L / 2, -A / 2, L / 2, 0); placa.quadraticCurveTo(L / 2, A / 2, L / 2 - r, A / 2); placa.lineTo(-L / 2, A / 2); placa.lineTo(-L / 2, -A / 2);
+      const azul = new T.MeshPhysicalMaterial({ color: 0x0b0c0f, roughness: .5, metalness: .1, clearcoat: .3 }), oro = new T.MeshStandardMaterial({ color: 0xe3a51c, emissive: 0x7a5200, roughness: .35, metalness: .2 });
+      [-1, 1].forEach(sx => { const x = sx * 2.85, z = .7, y = alto(x, z);
+        const c = new T.Group(); c.position.set(x, y + .03, z); c.rotation.set(-Math.PI / 2 + .3, 0, sx > 0 ? -.2 : Math.PI + .2);
+        c.add(new T.Mesh(new T.ExtrudeGeometry(placa, { depth: .05, bevelEnabled: true, bevelThickness: .02, bevelSize: .02, bevelSegments: 2 }), azul));
+        const galones = []; for (let k = 0; k < 4; k++) { const gl = new T.Mesh(new T.BoxGeometry(.09, A * .86, .03), oro); gl.position.set(.44 - k * .2, 0, .09); gl.scale.setScalar(.001); c.add(gl); galones.push(gl); }
+        const boton = new T.Mesh(new T.SphereGeometry(.055, 16, 10), oro); boton.position.set(-.54, 0, .09); boton.scale.z = .5; c.add(boton);
+        c.userData.galones = galones; c.scale.setScalar(.001); charreteras.push(c); cabeza.add(c); }); }
+    pintar();
+  });
+
+  // el visor: estilo anteojo envolvente (una sola pieza negra curvada, puente para la nariz, patillas y vincha)
+  const visor = new T.Group(); S1.add(visor);
+  const R0 = 2.2;                       // radio de curvatura del frente
+  const curvar = (g, zoff = 0) => { const p = g.attributes.position; for (let i = 0; i < p.count; i++) {
+      const x = p.getX(i), z = p.getZ(i) + zoff, a = x / R0, r = R0 + z; p.setXYZ(i, Math.sin(a) * r, p.getY(i), Math.cos(a) * r - R0); }
+    p.needsUpdate = true; g.computeVertexNormals(); return g; };
+  const contorno = (k = 1) => { const s = new T.Shape(), W = 2.0 * k, H = .62 * k;
+    s.moveTo(-W, H * .7);
+    s.quadraticCurveTo(0, H * 1.35, W, H * .7);
+    s.quadraticCurveTo(W * 1.07, -H * .2, W * .9, -H * .78);
+    s.quadraticCurveTo(W * .55, -H * 1.32, W * .26, -H * 1.02);
+    s.quadraticCurveTo(W * .1, -H * .62, 0, -H * .34);
+    s.quadraticCurveTo(-W * .1, -H * .62, -W * .26, -H * 1.02);
+    s.quadraticCurveTo(-W * .55, -H * 1.32, -W * .9, -H * .78);
+    s.quadraticCurveTo(-W * 1.07, -H * .2, -W, H * .7);
+    return s; };
+  const negro = new T.MeshPhysicalMaterial({ color: 0x07090c, roughness: .16, metalness: .3, clearcoat: 1, clearcoatRoughness: .08, reflectivity: .6, side: T.DoubleSide });
+  const mate = new T.MeshStandardMaterial({ color: 0x101318, roughness: .62, metalness: .2, side: T.DoubleSide });
+  // el frente: una malla fina curvada, recortada con la silueta del visor (así queda liso, sin facetas)
+  const mascara = (() => { const c = document.createElement('canvas'); c.width = 1024; c.height = 384; const x = c.getContext('2d');
+    const W = 2.1, H = .8, sx = 1024 / (2 * W), sy = 384 / (2 * H); x.fillStyle = '#000'; x.fillRect(0, 0, 1024, 384);
+    const pts = contorno().getPoints(60); x.beginPath(); pts.forEach((p, i) => { const X = (p.x + W) * sx, Y = (H - p.y) * sy; i ? x.lineTo(X, Y) : x.moveTo(X, Y); }); x.closePath(); x.fillStyle = '#fff'; x.fill();
+    const t = new T.CanvasTexture(c); return t; })();
+  const lamina = (zoff, mat) => { const g = new T.PlaneGeometry(4.2, 1.6, 120, 40); const m = new T.Mesh(curvar(g, zoff), mat); return m; };
+  const negroM = negro.clone(); negroM.alphaMap = mascara; negroM.alphaTest = .5;
+  const mateM = mate.clone(); mateM.alphaMap = mascara; mateM.alphaTest = .5;
+  const frente = lamina(.16, negroM); visor.add(frente);
+  const marco = lamina(.02, mateM); marco.scale.set(1.012, 1.03, 1); visor.add(marco);
+  // canto: anillo fino que une las dos láminas
+  const canto = (() => { const pts = contorno().getPoints(80).map(p => { const a = p.x / R0; return new T.Vector3(Math.sin(a) * (R0 + .09), p.y, Math.cos(a) * (R0 + .09) - R0); });
+    return new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3(pts, true), 200, .075, 8, true), negro); })();
+  visor.add(canto);
+  // línea de luz arriba (se enciende)
+  const linea = new T.Mesh(curvar(new T.BoxGeometry(2.7, .025, .02, 40, 1, 1), .19), new T.MeshBasicMaterial({ color: 0x07adfd, transparent: true, opacity: 0 }));
+  linea.position.y = .62; visor.add(linea);
+  // sensores del frente: dos arriba, dos junto al puente
+  const lentes = new T.Group(); visor.add(lentes);
+  const sensor = (x, y, r) => { const a = x / R0, z = R0 + .2;
+    const c = new T.Mesh(new T.CylinderGeometry(r, r, .05, 24), new T.MeshPhysicalMaterial({ color: 0x050608, roughness: .05, metalness: .8, clearcoat: 1 }));
+    c.rotation.x = Math.PI / 2; c.position.set(Math.sin(a) * z, y, Math.cos(a) * z - R0); c.rotation.y = a; visor.add(c);
+    const luz = new T.Mesh(new T.CircleGeometry(r * .45, 20), new T.MeshBasicMaterial({ color: 0x07adfd, transparent: true, opacity: 0 }));
+    luz.position.set(Math.sin(a) * (z + .03), y, Math.cos(a) * (z + .03) - R0); luz.rotation.y = a; lentes.add(luz); };
+  sensor(-.7, .42, .05); sensor(.7, .42, .05); sensor(-.46, -.36, .09); sensor(.46, -.36, .09); sensor(0, .55, .035);
+  // patillas hacia atrás y vincha
+  const fin = x => { const a = Math.sign(x) * 1.98 / R0; return new T.Vector3(Math.sin(a) * R0, .2, Math.cos(a) * R0 - R0); };
+  [-1, 1].forEach(s => {
+    const a = fin(s), curva = new T.CatmullRomCurve3([a, new T.Vector3(s * 1.95, .22, a.z - .7), new T.Vector3(s * 2.1, .18, -2.1), new T.Vector3(s * 2.08, .12, -3.45)]);
+    const g = new T.TubeGeometry(curva, 40, .1, 10, false); g.scale(1, 1.35, 1); const m = new T.Mesh(g, mate); m.position.y = -.05; visor.add(m); });
+  const correa = new T.Mesh(new T.TorusGeometry(2.08, .12, 12, 80, Math.PI), mate);
+  correa.rotation.set(Math.PI / 2, 0, Math.PI); correa.scale.set(1, 1.15, 1); correa.position.set(0, .07, -3.45); visor.add(correa);
+  visor.scale.setScalar(.84);
+  // cable que baja por detrás, como el de la batería
+  const cable = new T.Mesh(new T.TubeGeometry(new T.CatmullRomCurve3([new T.Vector3(1.9, .05, -2.9), new T.Vector3(2.2, -1.5, -3.3), new T.Vector3(2.6, -3.6, -2.6)]), 40, .035, 8, false), mate);
+  cable.visible = false;
+
+  // posición del visor puesto (en coordenadas de la cabeza)
+  const PUESTO = new T.Vector3(0, 1.86, 3.3);
+
+  /* ---------- escena 2: el juego en 360 ---------- */
+  const S2 = new T.Scene(), C2 = new T.PerspectiveCamera(90, 1, .1, 100);
+  const esfera = new T.SphereGeometry(10, 64, 40); esfera.scale(-1, 1, 1);
+  const tex = new T.TextureLoader().load('img/c172-360.jpg', () => pintar()); tex.encoding = T.sRGBEncoding;
+  S2.add(new T.Mesh(esfera, new T.MeshBasicMaterial({ map: tex, toneMapped: false })));
+
+  let drag = 0, x0 = null, d0 = 0, enJuego = false;
+  cv.addEventListener('pointerdown', e => { if (!enJuego) return; x0 = e.clientX; d0 = drag; cv.setPointerCapture(e.pointerId); });
+  cv.addEventListener('pointermove', e => { if (x0 === null) return; drag = d0 - (e.clientX - x0) * .005; pintar(); });
+  cv.addEventListener('pointerup', () => x0 = null);
+
+  const tam = () => { const w = pin.clientWidth, h = pin.clientHeight; R.setSize(w, h, false); C1.aspect = C2.aspect = w / h; C1.updateProjectionMatrix(); C2.updateProjectionMatrix(); };
+  const tr = (q, a, b) => Math.min(1, Math.max(0, (q - a) / (b - a)));
+  const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const ancho = () => innerWidth > 900;
+  let reloj = 0;
+
+  function pintar() {
+    const max = document.documentElement.scrollHeight - innerHeight;
+    root.style.setProperty('--p', (max > 0 ? Math.min(1, scrollY / max) : 0).toFixed(4));
+    const r = sec.getBoundingClientRect(), q = Math.min(1, Math.max(0, -r.top / Math.max(1, r.height - innerHeight)));
+    if (r.bottom < 0) return;
+
+    const sal = tr(q, .02, .1);
+    intro.style.opacity = (1 - sal).toFixed(3);
+    intro.style.transform = ancho() ? `translateY(calc(-50% - ${sal * 60}px))` : `translateY(${-sal * 60}px)`;
+
+    // 1) el visor baja y se acomoda (q .06 → .40)
+    const baja = ease(tr(q, .06, .40));
+    visor.position.set(lerp(1.4, PUESTO.x, baja), lerp(PUESTO.y + 4.2, PUESTO.y, baja), lerp(PUESTO.z + 2.2, PUESTO.z, baja));
+    visor.rotation.set(lerp(-.9, 0, baja), lerp(.7, 0, baja), lerp(.25, 0, baja));
+    correa.visible = baja > .8;
+    // 2) se enciende (q .40 → .50)
+    const luz = tr(q, .40, .50);
+    linea.material.opacity = luz; lentes.children.forEach(l => l.material.opacity = luz);
+    glow.intensity = luz * 2.2;
+    const rango = Math.min(4, Math.floor(tr(q, .14, .5) * 4.999));
+    charreteras.forEach(c => { c.scale.setScalar(Math.max(.001, ease(tr(q, .08, .18)))); c.userData.galones.forEach((gl, k) => gl.scale.setScalar(k < rango ? 1 : .001)); });
+    const RANGOS = ['Alumno', 'Cadete', 'Segundo oficial', 'Primer oficial', 'Comandante'];
+    tRango.textContent = RANGOS[rango];
+
+    // cámara: de 3/4 a frente, y después se mete en el lente (q .50 → .70)
+    const giro = ease(tr(q, 0, .46)), entra = ease(tr(q, .52, .70));
+    const ang = lerp(.85, 0, giro) + (ancho() ? 0 : 0);
+    const fz = C1.aspect < 1 ? Math.min(1.75, 1.25 / Math.max(.45, C1.aspect)) : 1;
+    const dist = lerp(18 * fz, 3.4, entra);
+    S1.fog.near = dist + 2; S1.fog.far = dist + 22;
+    const desv = ancho() ? lerp(-2.6, 0, tr(q, .02, .14)) : 0;   // la cabeza arranca a la derecha del título
+    C1.position.set(Math.sin(ang) * dist + desv * (1 - entra), lerp(lerp(2.6, 1.9, giro), PUESTO.y, entra), Math.cos(ang) * dist + PUESTO.z * entra * .6);
+    const baseY = ancho() ? 1.4 : lerp(-1.6, 0.9, tr(q, .02, .14));
+    C1.lookAt(desv * (1 - entra), lerp(baseY, PUESTO.y, Math.max(giro * .6, entra)), PUESTO.z * entra * .9);
+    C1.fov = lerp(32, 52, entra); C1.updateProjectionMatrix();
+    cabeza.rotation.y = Math.sin(reloj * .35) * .04 * (1 - baja);
+
+    // destello al cruzar el lente
+    const fl = tr(q, .63, .69) * (1 - tr(q, .69, .76));
+    flash.style.opacity = fl.toFixed(3);
+    enJuego = q > .69;
+    velo.style.opacity = enJuego ? tr(q, .72, .8) : 0;
+
+    // telemetría
+    const pct = Math.round(baja * 70 + luz * 30);
+    tVisor.textContent = String(pct).padStart(3, '0') + ' %';
+    tFase.textContent = enJuego ? '04 · En el juego' : entra > .02 ? '03 · Entrando' : luz > .02 ? '02 · Encendido' : baja > .02 ? '01 · Calibrando' : '00 · En espera';
+    estado.textContent = enJuego ? 'Dentro del juego' : entra > .02 ? 'Entrando al visor' : luz > .5 ? 'Visor encendido' : baja > .02 ? `Calibrando visor ${pct} %` : 'Visor en espera';
+    root.classList.toggle('on', luz > .5 || enJuego);
+    pin.classList.toggle('dentro', q > .76); txt.classList.toggle('ver', q > .8);
+
+    if (enJuego) {
+      const k = tr(q, .69, 1);
+      const y = 2 * Math.PI * (.53 + k * .08) + drag, pitch = .02 + (1 - tr(q, .69, .85)) * .1;
+      C2.fov = lerp(100, 64, ease(tr(q, .69, .92))); C2.updateProjectionMatrix();
+      const ph = Math.PI / 2 - pitch; C2.lookAt(Math.sin(ph) * Math.cos(y), Math.cos(ph), Math.sin(ph) * Math.sin(y));
+      R.toneMapping = T.NoToneMapping; R.render(S2, C2);
+    } else { R.toneMapping = T.ACESFilmicToneMapping; R.render(S1, C1); }
+  }
+  // un respiro leve mientras la cabeza está sola
+  const reduce = matchMedia('(prefers-reduced-motion: reduce)').matches;
+  const vivo = t => { reloj = t / 1000; const r = sec.getBoundingClientRect(); if (r.top > -innerHeight * 1.5 && r.bottom > 0) pintar(); requestAnimationFrame(vivo); };
+  tam(); addEventListener('resize', () => { tam(); pintar(); });
+  addEventListener('scroll', () => requestAnimationFrame(pintar), { passive: true });
+  if (!reduce) requestAnimationFrame(vivo); else pintar();
+})();
+
+/* video: pegá acá el enlace de YouTube cuando esté listo (no listado) */
+(() => {
+  const VIDEO_URL = '';
+  const caja = document.getElementById('video-caja'), pie = document.getElementById('video-pie');
+  const id = (VIDEO_URL.match(/(?:youtu\.be\/|v=|embed\/|shorts\/)([\w-]{11})/) || [])[1];
+  if (!id) { caja.addEventListener('click', e => e.preventDefault()); caja.style.cursor = 'default'; return; }
+  pie.textContent = 'Ver el video';
+  caja.href = 'https://www.youtube.com/watch?v=' + id; caja.target = '_blank'; caja.rel = 'noopener';
+  if (/github\.io$/.test(location.hostname)) caja.addEventListener('click', e => {
+    e.preventDefault();
+    caja.innerHTML = `<iframe src="https://www.youtube-nocookie.com/embed/${id}?autoplay=1&rel=0" title="Video de AURAV" allow="autoplay; encrypted-media; picture-in-picture" allowfullscreen></iframe>`;
+  }, { once: true });
+})();
+
+/* entradas */
+(() => {
+  if (reduce || !('IntersectionObserver' in window)) return;
+  const io = new IntersectionObserver(es => es.forEach(e => {
+    if (!e.isIntersecting) return;
+    const hermanos = [...e.target.parentElement.children].filter(x => x.classList.contains('rv'));
+    setTimeout(() => e.target.classList.remove('w'), Math.max(0, hermanos.indexOf(e.target)) * 90);
+    io.unobserve(e.target);
+  }), { threshold: .2 });
+  document.querySelectorAll('.rv').forEach(el => { if (el.getBoundingClientRect().top > innerHeight) { el.classList.add('w'); io.observe(el); } });
+  const tres = [...document.querySelectorAll('#tres li')];
+  const io2 = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { tres.forEach((li, i) => setTimeout(() => li.classList.add('vista'), 350 * i)); io2.disconnect(); } }), { threshold: .6 });
+  io2.observe(document.getElementById('tres'));
+  const io3 = new IntersectionObserver(es => es.forEach(e => { if (e.isIntersecting) { setTimeout(() => e.target.classList.add('visto'), 900); io3.disconnect(); } }), { threshold: .7 });
+  io3.observe(document.getElementById('plano'));
+})();
+if (reduce || !('IntersectionObserver' in window)) { document.querySelectorAll('#tres li').forEach(li => li.classList.add('vista')); document.getElementById('plano').classList.add('visto'); }
+
+/* juegos: acordeón */
+(() => {
+  const bs = [...document.querySelectorAll('.juego')];
+  bs.forEach(b => b.addEventListener('click', () => {
+    const abrir = b.getAttribute('aria-expanded') !== 'true';
+    bs.forEach(x => { x.setAttribute('aria-expanded', 'false'); document.getElementById(x.getAttribute('aria-controls')).classList.remove('abierto'); });
+    if (abrir) { b.setAttribute('aria-expanded', 'true'); document.getElementById(b.getAttribute('aria-controls')).classList.add('abierto'); }
+  }));
+})();
+
+/* aula: alumno / instructor */
+(() => {
+  const bs = [...document.querySelectorAll('.vistas button')], al = document.getElementById('v-al'), ins = document.getElementById('v-in');
+  bs.forEach(b => b.addEventListener('click', () => {
+    bs.forEach(x => x.setAttribute('aria-pressed', x === b));
+    const esIn = b.dataset.v === 'in';
+    al.hidden = esIn; ins.hidden = !esIn;
+    document.getElementById('quien').textContent = esIn ? 'Instructor' : 'Alumno';
+    document.getElementById('ini').textContent = esIn ? 'IN' : 'MR';
+  }));
+  const av = document.getElementById('avance');
+  if (!('IntersectionObserver' in window) || reduce) { av.style.width = '62%'; return; }
+  const io = new IntersectionObserver(es => { if (es[0].isIntersecting) { av.style.width = '62%'; io.disconnect(); } }, { threshold: .4 });
+  io.observe(av);
+})();
+</script>
+
+</body>
+</html>
