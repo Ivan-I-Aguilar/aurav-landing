@@ -658,6 +658,22 @@ const root = document.documentElement;
   const vivo = t => { reloj = t / 1000; const r = sec.getBoundingClientRect(); if (r.top > -innerHeight * 1.5 && r.bottom > 0) pintar(); requestAnimationFrame(vivo); };
   tam(); addEventListener('resize', () => { tam(); pintar(); });
   addEventListener('scroll', () => requestAnimationFrame(pintar), { passive: true });
+  /* piloto automático: apenas el visor empieza a bajar, la entrada al mundo AURAV se reproduce sola */
+  { let auto = null, hecho = false, ultimo = scrollY;
+    const fin = () => sec.offsetTop + (sec.offsetHeight - innerHeight) * .84;
+    const frenar = () => { if (auto) { cancelAnimationFrame(auto.raf); auto = null; } };
+    const arrancar = () => { const y0 = scrollY, y1 = fin(), d = Math.max(1, y1 - y0), T = 2600 + d / (sec.offsetHeight - innerHeight) * 1400, t0 = performance.now();
+      const paso = t => { const k = Math.min(1, (t - t0) / T), e = k < .5 ? 4 * k * k * k : 1 - Math.pow(-2 * k + 2, 3) / 2;
+        scrollTo({ top: y0 + d * e, behavior: 'instant' }); if (k < 1) auto.raf = requestAnimationFrame(paso); else { auto = null; hecho = true; } };
+      auto = { raf: requestAnimationFrame(paso) }; };
+    addEventListener('scroll', () => { const y = scrollY, r = sec.getBoundingClientRect(), q = -r.top / Math.max(1, r.height - innerHeight);
+      if (q < .015) hecho = false;
+      if (!auto && !hecho && y > ultimo && q > .03 && q < .7) arrancar();
+      ultimo = y; }, { passive: true });
+    const bloquear = e => { if (!auto) return; const arriba = e.type === 'wheel' ? e.deltaY < 0 : false; if (arriba) { frenar(); hecho = true; return; } e.preventDefault(); };
+    addEventListener('wheel', bloquear, { passive: false });
+    addEventListener('touchmove', e => { if (auto) e.preventDefault(); }, { passive: false });
+    addEventListener('keydown', e => { if (auto && /Arrow|Page|Space|Home|End/.test(e.code)) e.preventDefault(); }); }
   if (!reduce) requestAnimationFrame(vivo); else pintar();
 })();
 
