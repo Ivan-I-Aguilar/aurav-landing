@@ -57,12 +57,12 @@ img{display:block;max-width:100%}
 .guia::before{content:"";position:absolute;inset:0;border-radius:2px;background:linear-gradient(rgba(7,173,253,.22),rgba(7,173,253,.08))}
 .guia .hecho{position:absolute;left:0;top:0;width:2px;height:calc(var(--p) * 100%);border-radius:2px;background:linear-gradient(rgba(7,173,253,.25),var(--sky));box-shadow:0 0 8px rgba(7,173,253,.6)}
 .guia .punta{position:absolute;left:50%;top:calc(var(--p) * 100%);width:9px;height:9px;margin:-4.5px 0 0 -4.5px;border-radius:50%;background:#e6f6ff;box-shadow:0 0 0 3px rgba(7,173,253,.35),0 0 18px 4px rgba(7,173,253,.75)}
-.guia .rayo{position:absolute;left:0;top:calc(var(--p) * 100%);width:2px;height:calc((1 - var(--p)) * 100%);overflow:hidden}
-.guia .rayo::after{content:"";position:absolute;left:0;top:-90px;width:2px;height:90px;background:linear-gradient(transparent,rgba(7,173,253,.95),transparent);animation:rayo 2.4s cubic-bezier(.4,0,.2,1) infinite}
-@keyframes rayo{0%{transform:translateY(0);opacity:0}15%{opacity:1}100%{transform:translateY(100vh);opacity:.2}}
+.guia .rayo{position:absolute;left:0;top:calc(var(--p) * 100%);width:2px;height:calc((1 - var(--p)) * 100%);border-radius:2px;background:linear-gradient(rgba(7,173,253,.95),rgba(7,173,253,.55) 40%,rgba(7,173,253,.12));box-shadow:0 0 6px rgba(7,173,253,.55),0 0 14px rgba(7,173,253,.25);overflow:hidden}
+.guia .rayo::after{content:"";position:absolute;inset:0;background:repeating-linear-gradient(transparent 0 26px,rgba(230,246,255,.9) 26px 34px,transparent 34px 60px);animation:rayo .9s linear infinite}
+@keyframes rayo{from{background-position:0 0}to{background-position:0 60px}}
 .guia .marca{position:absolute;left:-3px;width:8px;height:1px;background:rgba(7,173,253,.55)}
 .guia .marca.ok{background:var(--sky);box-shadow:0 0 6px rgba(7,173,253,.8)}
-@media (prefers-reduced-motion:reduce){.guia .rayo::after{animation:none;opacity:0}}
+@media (prefers-reduced-motion:reduce){.guia .rayo::after{animation:none}}
 @media print{.guia{display:none}}
 .btn{display:inline-flex;align-items:center;gap:10px;font:600 15px/1 var(--sans);text-decoration:none;color:var(--bg);background:var(--sky);padding:15px 22px;border-radius:999px;border:0;cursor:pointer;transition:transform .2s,background-color .2s}
 .btn:hover{transform:translateY(-2px);background:#3cc0ff}
